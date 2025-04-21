@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400px" height="300px" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a8d8ea" />
+      <stop offset="100%" stop-color="#6ecef5" />
+    </linearGradient>
+    <linearGradient id="grassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7ac142" />
+      <stop offset="100%" stop-color="#5a9d32" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#skyGradient)" />
+  
+  <!-- Sun -->
+  <circle cx="320" cy="60" r="30" fill="#ffb347" />
+  
+  <!-- Clouds -->
+  <g fill="#ffffff" opacity="0.9">
+    <ellipse cx="100" cy="70" rx="30" ry="20" />
+    <ellipse cx="130" cy="70" rx="25" ry="15" />
+    <ellipse cx="70" cy="70" rx="20" ry="15" />
+    
+    <ellipse cx="250" cy="40" rx="35" ry="20" />
+    <ellipse cx="280" cy="40" rx="25" ry="15" />
+    <ellipse cx="220" cy="40" rx="20" ry="15" />
+  </g>
+  
+  <!-- Hills -->
+  <path d="M0,300 L0,200 Q100,150 200,200 Q300,250 400,200 L400,300 Z" fill="url(#grassGradient)" />
+  
+  <!-- House -->
+  <g transform="translate(150, 150)">
+    <!-- House body -->
+    <rect x="0" y="30" width="100" height="70" fill="#f5e1b9" />
+    
+    <!-- Roof -->
+    <polygon points="0,30 50,0 100,30" fill="#e57373" />
+    
+    <!-- Door -->
+    <rect x="40" y="70" width="20" height="30" fill="#8d6e63" />
+    <circle cx="55" cy="85" r="2" fill="#ffd54f" />
+    
+    <!-- Windows -->
+    <rect x="15" y="45" width="20" height="20" fill="#bbdefb" />
+    <rect x="65" y="45" width="20" height="20" fill="#bbdefb" />
+    
+    <!-- Window frames -->
+    <path d="M15,55 L35,55 M25,45 L25,65" stroke="#78909c" stroke-width="1" />
+    <path d="M65,55 L85,55 M75,45 L75,65" stroke="#78909c" stroke-width="1" />
+  </g>
+  
+  <!-- Trees -->
+  <g transform="translate(50, 180)">
+    <!-- Tree trunk -->
+    <rect x="10" y="30" width="10" height="40" fill="#8d6e63" />
+    
+    <!-- Tree top -->
+    <circle cx="15" cy="25" r="20" fill="#66bb6a" />
+  </g>
+  
+  <g transform="translate(300, 170)">
+    <!-- Tree trunk -->
+    <rect x="10" y="30" width="10" height="50" fill="#8d6e63" />
+    
+    <!-- Tree top -->
+    <circle cx="15" cy="20" r="25" fill="#66bb6a" />
+  </g>
+  
+  <!-- Totoro-inspired character -->
+  <g transform="translate(250, 220)">
+    <!-- Body -->
+    <ellipse cx="0" cy="0" rx="25" ry="30" fill="#90a4ae" />
+    
+    <!-- Ears -->
+    <path d="M-15,-25 Q-25,-40 -10,-30 Z" fill="#90a4ae" />
+    <path d="M15,-25 Q25,-40 10,-30 Z" fill="#90a4ae" />
+    
+    <!-- Eyes -->
+    <circle cx="-8" cy="-10" r="5" fill="white" />
+    <circle cx="8" cy="-10" r="5" fill="white" />
+    <circle cx="-8" cy="-10" r="2" fill="black" />
+    <circle cx="8" cy="-10" r="2" fill="black" />
+    
+    <!-- Belly -->
+    <ellipse cx="0" cy="5" rx="15" ry="20" fill="#cfd8dc" />
+    
+    <!-- Belly pattern -->
+    <path d="M-10,5 L10,5 M-5,0 L5,0 M-8,10 L8,10" stroke="#b0bec5" stroke-width="2" />
+  </g>
+</svg>
