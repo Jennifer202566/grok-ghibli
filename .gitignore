@@ -1,0 +1,15 @@
+# 环境变量文件
+.env
+.env.*
+!.env.example
+
+# 依赖目录
+node_modules/
+
+# 上传和结果文件夹
+uploads/
+results/
+
+# 系统文件
+.DS_Store
+Thumbs.db
