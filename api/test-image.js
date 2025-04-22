@@ -16,7 +16,30 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { image } = req.body;
+    // 手动解析请求体
+    let body;
+    try {
+      // 检查请求体是否已经被解析
+      if (req.body && typeof req.body === 'object') {
+        body = req.body;
+      } else if (typeof req.body === 'string') {
+        body = JSON.parse(req.body);
+      } else {
+        // 如果请求体尚未解析，手动解析
+        const buffers = [];
+        for await (const chunk of req) {
+          buffers.push(chunk);
+        }
+        const data = Buffer.concat(buffers).toString();
+        body = data ? JSON.parse(data) : {};
+      }
+    } catch (e) {
+      console.error('解析请求体失败:', e);
+      return res.status(400).json({ error: '无法解析请求体', details: e.message });
+    }
+
+    // 现在可以安全地访问 body.image
+    const { image } = body;
     
     if (!image) {
       return res.status(400).json({ error: '缺少图像数据' });
