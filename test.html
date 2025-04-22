@@ -20,6 +20,12 @@
     <input type="text" id="model-owner" placeholder="模型所有者" value="ghostface-ai">
     <input type="text" id="model-name" placeholder="模型名称" value="gif-upscaler">
     <button id="query-model-btn">查询模型信息</button>
+<button id="debug-call-btn">调试 API 调用</button>
+<button id="local-model-btn">测试本地模型</button>
+<div>
+  <input type="text" id="prediction-id" placeholder="预测 ID">
+  <button id="check-prediction-btn">检查预测结果</button>
+</div>
   </div>
 </div>
     
@@ -130,6 +136,76 @@ document.getElementById('query-model-btn').addEventListener('click', function() 
                 });
         });
 
+// 调试 API 调用
+document.getElementById('debug-call-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetchWithErrorHandling('/api/debug-call')
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = 'API 调试结果:\n' + JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = 'API 调试错误:\n' + error.message;
+        });
+});
+
+// 测试本地模型
+document.getElementById('local-model-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetchWithErrorHandling('/api/local-model')
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '本地模型测试结果:\n' + JSON.stringify(data, null, 2);
+            
+            // 如果有预测 ID，自动填充到输入框
+            if (data.predictionId) {
+                document.getElementById('prediction-id').value = data.predictionId;
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '本地模型测试错误:\n' + error.message;
+        });
+});
+
+// 检查预测结果
+document.getElementById('check-prediction-btn').addEventListener('click', function() {
+    const predictionId = document.getElementById('prediction-id').value;
+    
+    if (!predictionId) {
+        alert('请输入预测 ID');
+        return;
+    }
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetchWithErrorHandling(`/api/check-prediction?id=${encodeURIComponent(predictionId)}`)
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '预测结果:\n' + JSON.stringify(data, null, 2);
+            
+            // 如果预测成功并有输出，显示图像
+            if (data.prediction && data.prediction.status === 'succeeded' && data.prediction.output) {
+                let output = data.prediction.output;
+                if (Array.isArray(output)) {
+                    output = output[0];
+                }
+                
+                document.getElementById('result-preview').src = output;
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '检查预测错误:\n' + error.message;
+        });
+});
+        
         // 测试 Stable Diffusion
         document.getElementById('test-stable-diffusion-btn').addEventListener('click', function() {
             document.getElementById('loading').style.display = 'block';
