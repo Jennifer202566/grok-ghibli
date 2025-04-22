@@ -9,114 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const changeImageBtn = document.getElementById('change-image-btn');
     const downloadBtn = document.getElementById('download-btn');
     const loading = document.getElementById('loading');
-
-    // 在 HTML 中添加一个测试按钮
-// <button id="test-upload-btn" style="margin-top: 10px;">测试图像上传</button>
-
-// 在 DOMContentLoaded 事件处理函数中添加
-document.addEventListener('DOMContentLoaded', function() {
-    // ... 现有代码 ...
-    
-    // 添加测试按钮事件处理
-    const testUploadBtn = document.getElementById('test-upload-btn');
-    if (testUploadBtn) {
-        testUploadBtn.addEventListener('click', function() {
-            if (fileInput.files.length) {
-                testImageUpload(fileInput.files[0]);
-            } else {
-                alert('请先选择一张图片');
-            }
-        });
-    }
-    
-    // ... 现有代码 ...
-});
-
-// 添加测试图像上传函数
-function testImageUpload(file) {
-    // 检查文件类型
-    if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-        alert('请上传 JPG 或 PNG 格式的图片');
-        return;
-    }
-    
-    // 检查文件大小
-    if (file.size > 1 * 1024 * 1024) {
-        alert('图片大小不能超过 1MB');
-        return;
-    }
-    
-    // 显示加载状态
-    loading.style.display = 'block';
-    
-    // 读取文件
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        // 创建图像对象以获取尺寸
-        const img = new Image();
-        img.onload = function() {
-            // 调整图像尺寸
-            const maxDimension = 512;
-            let width = img.width;
-            let height = img.height;
-            
-            // 计算新尺寸，保持宽高比
-            if (width > height) {
-                height = Math.round(height * (maxDimension / width));
-                width = maxDimension;
-            } else {
-                width = Math.round(width * (maxDimension / height));
-                height = maxDimension;
-            }
-            
-            // 创建画布并调整图像大小
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // 获取调整大小后的图像数据
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            
-            // 提取 base64 数据
-            const base64Image = imageData.split(',')[1];
-            
-            // 调用测试 API
-            fetch('/api/test-image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image: base64Image
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 隐藏加载状态
-                loading.style.display = 'none';
-                
-                // 显示结果
-                alert(`测试成功！图像大小: ${data.imageSize}`);
-                console.log('测试结果:', data);
-            })
-            .catch(error => {
-                // 隐藏加载状态
-                loading.style.display = 'none';
-                
-                console.error('测试错误:', error);
-                alert('测试失败: ' + error.message);
-            });
-        };
-        
-        img.src = e.target.result;
-    };
-    
-    reader.readAsDataURL(file);
-}
+    const resultMessage = document.getElementById('result-message');
     
     // 初始状态：显示上传区域，隐藏预览容器和加载动画
     previewContainer.style.display = 'none';
@@ -158,6 +51,7 @@ function testImageUpload(file) {
     changeImageBtn.addEventListener('click', () => {
         previewContainer.style.display = 'none';
         uploadArea.style.display = 'block';
+        resultMessage.textContent = '';
     });
     
     // 下载按钮
@@ -167,97 +61,157 @@ function testImageUpload(file) {
         }
     });
     
-// 在 handleFileUpload 函数中添加更严格的图像预处理
-function handleFileUpload(file) {
-    // 检查文件类型
-    if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-        alert('请上传 JPG 或 PNG 格式的图片');
-        return;
-    }
-    
-    // 检查文件大小（最大 1MB，更小）
-    if (file.size > 1 * 1024 * 1024) {
-        alert('图片大小不能超过 1MB');
-        return;
-    }
-    
-    // 显示原始图片预览
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        // 创建图像对象以获取尺寸
-        const img = new Image();
-        img.onload = function() {
-            // 强制调整图像尺寸，无论原始尺寸如何
-            const maxDimension = 512; // 更小的最大尺寸
-            let width = img.width;
-            let height = img.height;
-            
-            // 计算新尺寸，保持宽高比
-            if (width > height) {
-                height = Math.round(height * (maxDimension / width));
-                width = maxDimension;
-            } else {
-                width = Math.round(width * (maxDimension / height));
-                height = maxDimension;
-            }
-            
-            // 创建画布并调整图像大小
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#FFFFFF'; // 白色背景
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // 获取调整大小后的图像数据，使用较低的质量
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            
-            // 显示图像预览
-            originalPreview.src = imageData;
+    // 处理文件上传
+    function handleFileUpload(file) {
+        // 检查文件类型
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            alert('请上传 JPG 或 PNG 格式的图片');
+            return;
+        }
+        
+        // 检查文件大小（最大 5MB）
+        if (file.size > 5 * 1024 * 1024) {
+            alert('图片大小不能超过 5MB');
+            return;
+        }
+        
+        // 显示原始图片预览
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            originalPreview.src = e.target.result;
             uploadArea.style.display = 'none';
             loading.style.display = 'block';
+            resultMessage.textContent = '准备处理图像...';
             
-            // 提取 base64 数据
-            const base64Image = imageData.split(',')[1];
-            
-            // 调用 API
-            fetch('/api/convert', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image: base64Image
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || `网络响应异常，状态码: ${response.status}`);
-                    });
+            // 创建图像对象以获取尺寸
+            const img = new Image();
+            img.onload = function() {
+                // 调整图像尺寸
+                const maxDimension = 512;
+                let width = img.width;
+                let height = img.height;
+                
+                // 计算新尺寸，保持宽高比
+                if (width > height) {
+                    height = Math.round(height * (maxDimension / width));
+                    width = maxDimension;
+                } else {
+                    width = Math.round(width * (maxDimension / height));
+                    height = maxDimension;
                 }
-                return response.json();
-            })
-            .then(data => {
-                resultPreview.src = data.outputImage;
-                loading.style.display = 'none';
-                previewContainer.style.display = 'block';
-            })
-            .catch(error => {
-                console.error('图像转换错误:', error);
-                alert('图片转换失败。请重试。错误: ' + error.message);
-                loading.style.display = 'none';
-                previewContainer.style.display = 'block';
-            });
+                
+                // 创建画布并调整图像大小
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 获取调整大小后的图像数据
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // 提取 base64 数据
+                const base64Image = imageData.split(',')[1];
+                
+                // 提交图像转换请求
+                resultMessage.textContent = '提交图像转换请求...';
+                
+                fetch('/api/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: base64Image
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            try {
+                                const errorData = JSON.parse(text);
+                                throw new Error(errorData.error || `网络响应异常，状态码: ${response.status}`);
+                            } catch (e) {
+                                throw new Error(`网络响应异常，状态码: ${response.status}, 响应: ${text.substring(0, 100)}...`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.predictionId) {
+                        // 显示等待消息
+                        resultMessage.textContent = '图像正在处理中，请稍候...';
+                        
+                        // 开始轮询检查结果
+                        checkResult(data.predictionId);
+                    } else {
+                        throw new Error('未收到预测ID');
+                    }
+                })
+                .catch(error => {
+                    console.error('图像转换错误:', error);
+                    loading.style.display = 'none';
+                    resultMessage.textContent = '图片转换失败。请重试。错误: ' + error.message;
+                });
+            };
+            
+            img.src = e.target.result;
         };
         
-        img.src = e.target.result;
-    };
+        reader.readAsDataURL(file);
+    }
     
-    reader.readAsDataURL(file);
-}
-
+    // 检查结果的函数
+    function checkResult(predictionId) {
+        // 设置轮询间隔（毫秒）
+        const pollInterval = 2000;
+        
+        // 轮询函数
+        function poll() {
+            fetch(`/api/check-result?id=${predictionId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            try {
+                                const errorData = JSON.parse(text);
+                                throw new Error(errorData.error || `网络响应异常，状态码: ${response.status}`);
+                            } catch (e) {
+                                throw new Error(`网络响应异常，状态码: ${response.status}, 响应: ${text.substring(0, 100)}...`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 转换成功，显示结果
+                        loading.style.display = 'none';
+                        resultPreview.src = data.outputImage;
+                        previewContainer.style.display = 'block';
+                        resultMessage.textContent = '';
+                    } else if (data.status === 'failed') {
+                        // 转换失败
+                        loading.style.display = 'none';
+                        resultMessage.textContent = '图片转换失败。错误: ' + data.error;
+                    } else {
+                        // 仍在处理中，继续轮询
+                        resultMessage.textContent = `图像正在处理中，当前状态: ${data.currentStatus}...`;
+                        setTimeout(poll, pollInterval);
+                    }
+                })
+                .catch(error => {
+                    console.error('检查结果错误:', error);
+                    loading.style.display = 'none';
+                    resultMessage.textContent = '检查结果失败。错误: ' + error.message;
+                });
+        }
+        
+        // 开始轮询
+        poll();
+    }
     
     // 下载图片函数
     function downloadImage(url) {
