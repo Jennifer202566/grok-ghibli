@@ -51,6 +51,127 @@ if (!isVercel) {
   }
 }
 
+// 在 script.js 中的 handleFileUpload 函数中
+function handleFileUpload(file) {
+    // 检查文件类型
+    if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+        alert('请上传 JPG 或 PNG 格式的图片');
+        return;
+    }
+    
+    // 检查文件大小（最大 2MB，比之前的 5MB 更小）
+    if (file.size > 2 * 1024 * 1024) {
+        alert('图片大小不能超过 2MB');
+        return;
+    }
+    
+    // 显示原始图片预览
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        // 检查图像尺寸
+        const img = new Image();
+        img.onload = async () => {
+            // 如果图像太大，调整大小
+            const maxDimension = 1024; // 最大尺寸
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > maxDimension || height > maxDimension) {
+                if (width > height) {
+                    height = Math.round(height * (maxDimension / width));
+                    width = maxDimension;
+                } else {
+                    width = Math.round(width * (maxDimension / height));
+                    height = maxDimension;
+                }
+                
+                // 调整图像大小
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 获取调整大小后的图像数据
+                const resizedImageData = canvas.toDataURL('image/jpeg', 0.9);
+                
+                // 显示调整大小后的图像
+                originalPreview.src = resizedImageData;
+                
+                // 提取 base64 数据
+                const base64Image = resizedImageData.split(',')[1];
+                
+                // 调用 API
+                await callConvertAPI(base64Image);
+            } else {
+                // 图像尺寸合适，直接使用
+                originalPreview.src = e.target.result;
+                
+                // 提取 base64 数据
+                const base64Image = e.target.result.split(',')[1];
+                
+                // 调用 API
+                await callConvertAPI(base64Image);
+            }
+        };
+        
+        img.src = e.target.result;
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// 提取 API 调用逻辑到单独的函数
+async function callConvertAPI(base64Image) {
+    uploadArea.style.display = 'none';
+    loading.style.display = 'block';
+    
+    try {
+        // 调用 API 端点
+        const response = await fetch('/api/convert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: base64Image
+            })
+        });
+        
+        // 检查响应状态
+        if (!response.ok) {
+            let errorMessage = `网络响应异常，状态码: ${response.status}`;
+            
+            try {
+                const errorData = await response.json();
+                if (errorData.error) {
+                    errorMessage = errorData.error;
+                }
+                if (errorData.suggestion) {
+                    errorMessage += ` (${errorData.suggestion})`;
+                }
+            } catch (e) {
+                console.error('无法解析错误响应为 JSON:', e);
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        // 解析响应数据
+        const data = await response.json();
+        
+        // 显示转换后的图片
+        resultPreview.src = data.outputImage;
+        
+    } catch (error) {
+        console.error('图像转换错误:', error);
+        alert('图片转换失败。请重试。错误: ' + error.message);
+    } finally {
+        loading.style.display = 'none';
+        previewContainer.style.display = 'block';
+    }
+}
+
 // 处理图片上传和转换
 app.post('/api/transform', upload.single('image'), async (req, res) => {
   console.log('收到图片上传请求');
