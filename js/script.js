@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 在 HTML 中添加一个测试按钮
 // <button id="test-upload-btn" style="margin-top: 10px;">测试图像上传</button>
 
-// 在 script.js 中添加测试按钮的事件处理
+// 在 DOMContentLoaded 事件处理函数中添加
 document.addEventListener('DOMContentLoaded', function() {
     // ... 现有代码 ...
     
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ... 现有代码 ...
 });
 
-// 测试图像上传函数
+// 添加测试图像上传函数
 function testImageUpload(file) {
     // 检查文件类型
     if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
@@ -46,13 +46,16 @@ function testImageUpload(file) {
         return;
     }
     
-    // 显示原始图片预览
+    // 显示加载状态
+    loading.style.display = 'block';
+    
+    // 读取文件
     const reader = new FileReader();
     reader.onload = function(e) {
         // 创建图像对象以获取尺寸
         const img = new Image();
         img.onload = function() {
-            // 强制调整图像尺寸
+            // 调整图像尺寸
             const maxDimension = 512;
             let width = img.width;
             let height = img.height;
@@ -93,10 +96,17 @@ function testImageUpload(file) {
             })
             .then(response => response.json())
             .then(data => {
+                // 隐藏加载状态
+                loading.style.display = 'none';
+                
+                // 显示结果
                 alert(`测试成功！图像大小: ${data.imageSize}`);
                 console.log('测试结果:', data);
             })
             .catch(error => {
+                // 隐藏加载状态
+                loading.style.display = 'none';
+                
                 console.error('测试错误:', error);
                 alert('测试失败: ' + error.message);
             });
