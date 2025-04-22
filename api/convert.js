@@ -29,13 +29,14 @@ module.exports = async (req, res) => {
 
     console.log('准备调用 Replicate API');
     
-    // 使用一个已知稳定的模型 - 图像超分辨率模型
-    const modelId = "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b";
+    // 使用一个非常简单的模型 - 图像超分辨率模型
+    // 这是一个已知工作的模型 ID
+    const modelId = "tencentarc/gfpgan:9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3";
     
-    // 简化请求格式
+    // 简化请求格式 - 只发送最基本的参数
     const requestData = {
       version: modelId,
-      input: { image: `data:image/jpeg;base64,${image}` }
+      input: { img: `data:image/jpeg;base64,${image}` }
     };
     
     console.log('请求模型:', modelId);
@@ -127,7 +128,21 @@ module.exports = async (req, res) => {
       });
       
       if (error.response.status === 422) {
-        errorMessage = '请求参数无效，请尝试上传不同的图片或减小图片大小';
+        // 提取详细错误信息
+        let detailError = '请求参数无效';
+        try {
+          if (error.response.data.detail) {
+            if (typeof error.response.data.detail === 'string') {
+              detailError = error.response.data.detail;
+            } else if (typeof error.response.data.detail === 'object') {
+              detailError = JSON.stringify(error.response.data.detail);
+            }
+          }
+        } catch (e) {
+          console.error('解析错误详情失败:', e);
+        }
+        
+        errorMessage = `请求参数无效: ${detailError}，请尝试上传不同的图片或减小图片大小`;
         statusCode = 400;
       }
     }
