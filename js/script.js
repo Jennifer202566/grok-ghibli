@@ -59,74 +59,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 处理文件上传
-    function handleFileUpload(file) {
-        // 检查文件类型
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            alert('请上传 JPG 或 PNG 格式的图片');
-            return;
-        }
-        
-        // 检查文件大小（最大 5MB）
-        if (file.size > 5 * 1024 * 1024) {
-            alert('图片大小不能超过 5MB');
-            return;
-        }
-        
-        // 显示原始图片预览
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            originalPreview.src = e.target.result;
+  // 在 handleFileUpload 函数中添加图像大小处理
+function handleFileUpload(file) {
+    // 检查文件类型
+    if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+        alert('请上传 JPG 或 PNG 格式的图片');
+        return;
+    }
+    
+    // 检查文件大小（最大 2MB）
+    if (file.size > 2 * 1024 * 1024) {
+        alert('图片大小不能超过 2MB');
+        return;
+    }
+    
+    // 显示原始图片预览
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        // 创建图像对象以获取尺寸
+        const img = new Image();
+        img.onload = function() {
+            // 检查图像尺寸
+            const maxDimension = 1024; // 最大尺寸
+            let width = img.width;
+            let height = img.height;
+            let needResize = false;
+            
+            if (width > maxDimension || height > maxDimension) {
+                needResize = true;
+                if (width > height) {
+                    height = Math.round(height * (maxDimension / width));
+                    width = maxDimension;
+                } else {
+                    width = Math.round(width * (maxDimension / height));
+                    height = maxDimension;
+                }
+            }
+            
+            let imageData = e.target.result;
+            
+            // 如果需要调整大小
+            if (needResize) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 获取调整大小后的图像数据
+                imageData = canvas.toDataURL('image/jpeg', 0.9);
+            }
+            
+            // 显示图像预览
+            originalPreview.src = imageData;
             uploadArea.style.display = 'none';
             loading.style.display = 'block';
             
-            try {
-                // 将图片转换为 base64
-                const base64Image = e.target.result.split(',')[1];
-                
-                // 调用 API 端点进行图像转换
-                const response = await fetch('/api/convert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        image: base64Image
-                    })
-                });
-                
-                // 检查响应状态
+            // 提取 base64 数据
+            const base64Image = imageData.split(',')[1];
+            
+            // 调用 API
+            fetch('/api/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: base64Image
+                })
+            })
+            .then(response => {
                 if (!response.ok) {
-                    let errorMessage = `网络响应异常，状态码: ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error) {
-                            errorMessage = errorData.error;
-                        }
-                    } catch (e) {
-                        console.error('无法解析错误响应:', e);
-                    }
-                    throw new Error(errorMessage);
+                    return response.json().then(data => {
+                        throw new Error(data.error || `网络响应异常，状态码: ${response.status}`);
+                    });
                 }
-                
-                // 解析响应数据
-                const data = await response.json();
-                
-                // 显示转换后的图片
+                return response.json();
+            })
+            .then(data => {
                 resultPreview.src = data.outputImage;
                 loading.style.display = 'none';
                 previewContainer.style.display = 'block';
-                
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('图像转换错误:', error);
                 alert('图片转换失败。请重试。错误: ' + error.message);
                 loading.style.display = 'none';
                 previewContainer.style.display = 'block';
-            }
+            });
         };
         
-        reader.readAsDataURL(file);
-    }
+        img.src = e.target.result;
+    };
+    
+    reader.readAsDataURL(file);
+}
     
     // 下载图片函数
     function downloadImage(url) {
