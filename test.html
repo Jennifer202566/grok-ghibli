@@ -6,43 +6,53 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .container { margin-bottom: 20px; }
         button { padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; margin-top: 10px; }
-        #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; }
+        input[type="text"] { padding: 8px; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
         #loading { display: none; margin-top: 20px; }
         .preview { max-width: 100%; max-height: 300px; margin-top: 10px; }
+        .button-group { margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1>API 测试页面</h1>
-
-<div class="container">
-  <h2>查询模型信息</h2>
-  <div>
-    <input type="text" id="model-owner" placeholder="模型所有者" value="ghostface-ai">
-    <input type="text" id="model-name" placeholder="模型名称" value="gif-upscaler">
-
-  </div>
-</div>
     
     <div class="container">
         <h2>测试图像上传</h2>
         <input type="file" id="file-input" accept="image/jpeg, image/png">
-        <div>
+        <div class="button-group">
             <button id="test-btn">测试图像上传</button>
             <button id="test-url-btn">测试 URL API</button>
             <button id="test-convert-btn">测试图像转换</button>
         </div>
-        <div>
+        <div class="button-group">
             <button id="test-models-btn">获取模型列表</button>
             <button id="test-stable-diffusion-btn">测试 Stable Diffusion</button>
-<button id="test-alt-model-btn">测试替代模型</button>
-<button id="test-text-btn">测试文本生成</button>
-                <button id="query-model-btn">查询模型信息</button>
-<button id="debug-call-btn">调试 API 调用</button>
-<button id="local-model-btn">测试本地模型</button>
-<div>
-  <input type="text" id="prediction-id" placeholder="预测 ID">
-  <button id="check-prediction-btn">检查预测结果</button>
-</div>
+        </div>
+        <div class="button-group">
+            <button id="test-public-model-btn">测试公共模型</button>
+            <button id="check-token-btn">检查 API 密钥</button>
+            <button id="search-ghibli-models-btn">搜索 Ghibli 模型</button>
+        </div>
+        <div class="button-group">
+            <button id="test-alt-model-btn">测试替代模型</button>
+            <button id="test-text-btn">测试文本生成</button>
+        </div>
+        <div class="button-group">
+            <button id="debug-call-btn">调试 API 调用</button>
+            <button id="local-model-btn">测试本地模型</button>
+        </div>
+        <div class="button-group">
+            <input type="text" id="prediction-id" placeholder="预测 ID">
+            <button id="check-prediction-btn">检查预测结果</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>查询模型信息</h2>
+        <div>
+            <input type="text" id="model-owner" placeholder="模型所有者" value="ghostface-ai">
+            <input type="text" id="model-name" placeholder="模型名称" value="gif-upscaler">
+            <button id="query-model-btn">查询模型信息</button>
         </div>
     </div>
     
@@ -61,6 +71,31 @@
     <div id="result"></div>
     
     <script>
+        // 通用 fetch 函数，带有改进的错误处理
+        function fetchWithErrorHandling(url, options = {}) {
+            return fetch(url, options)
+                .then(async response => {
+                    // 尝试解析响应为 JSON
+                    let responseData;
+                    let responseText;
+                    
+                    try {
+                        responseText = await response.text();
+                        responseData = JSON.parse(responseText);
+                    } catch (e) {
+                        console.error('响应不是有效的 JSON:', responseText);
+                        throw new Error(`服务器返回了无效的 JSON 响应: ${responseText.substring(0, 100)}...`);
+                    }
+                    
+                    // 检查响应状态
+                    if (!response.ok) {
+                        throw new Error(responseData.error || `请求失败，状态码: ${response.status}`);
+                    }
+                    
+                    return responseData;
+                });
+        }
+        
         // 测试图像上传
         document.getElementById('test-btn').addEventListener('click', function() {
             testImageUpload('/api/test-image');
@@ -71,8 +106,7 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').textContent = '处理中...';
             
-            fetch('/api/url-test')
-                .then(response => response.json())
+            fetchWithErrorHandling('/api/url-test')
                 .then(data => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('result').textContent = 'URL 测试结果:\n' + JSON.stringify(data, null, 2);
@@ -90,30 +124,6 @@
                     document.getElementById('result').textContent = 'URL 测试错误:\n' + error.message;
                 });
         });
-// 查询模型信息
-document.getElementById('query-model-btn').addEventListener('click', function() {
-    const owner = document.getElementById('model-owner').value;
-    const name = document.getElementById('model-name').value;
-    
-    if (!owner || !name) {
-        alert('请输入模型所有者和名称');
-        return;
-    }
-    
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetch(`/api/model-info?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '模型信息:\n' + JSON.stringify(data, null, 2);
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '查询模型信息错误:\n' + error.message;
-        });
-});
         
         // 测试图像转换
         document.getElementById('test-convert-btn').addEventListener('click', function() {
@@ -125,8 +135,7 @@ document.getElementById('query-model-btn').addEventListener('click', function() 
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').textContent = '处理中...';
             
-            fetch('/api/models')
-                .then(response => response.json())
+            fetchWithErrorHandling('/api/models')
                 .then(data => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('result').textContent = '模型列表:\n' + JSON.stringify(data, null, 2);
@@ -137,83 +146,12 @@ document.getElementById('query-model-btn').addEventListener('click', function() 
                 });
         });
 
-// 调试 API 调用
-document.getElementById('debug-call-btn').addEventListener('click', function() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetchWithErrorHandling('/api/debug-call')
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = 'API 调试结果:\n' + JSON.stringify(data, null, 2);
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = 'API 调试错误:\n' + error.message;
-        });
-});
-
-// 测试本地模型
-document.getElementById('local-model-btn').addEventListener('click', function() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetchWithErrorHandling('/api/local-model')
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '本地模型测试结果:\n' + JSON.stringify(data, null, 2);
-            
-            // 如果有预测 ID，自动填充到输入框
-            if (data.predictionId) {
-                document.getElementById('prediction-id').value = data.predictionId;
-            }
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '本地模型测试错误:\n' + error.message;
-        });
-});
-
-// 检查预测结果
-document.getElementById('check-prediction-btn').addEventListener('click', function() {
-    const predictionId = document.getElementById('prediction-id').value;
-    
-    if (!predictionId) {
-        alert('请输入预测 ID');
-        return;
-    }
-    
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetchWithErrorHandling(`/api/check-prediction?id=${encodeURIComponent(predictionId)}`)
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '预测结果:\n' + JSON.stringify(data, null, 2);
-            
-            // 如果预测成功并有输出，显示图像
-            if (data.prediction && data.prediction.status === 'succeeded' && data.prediction.output) {
-                let output = data.prediction.output;
-                if (Array.isArray(output)) {
-                    output = output[0];
-                }
-                
-                document.getElementById('result-preview').src = output;
-            }
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '检查预测错误:\n' + error.message;
-        });
-});
-        
         // 测试 Stable Diffusion
         document.getElementById('test-stable-diffusion-btn').addEventListener('click', function() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').textContent = '处理中...';
             
-            fetch('/api/stable-diffusion')
-                .then(response => response.json())
+            fetchWithErrorHandling('/api/stable-diffusion')
                 .then(data => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('result').textContent = 'Stable Diffusion 测试结果:\n' + JSON.stringify(data, null, 2);
@@ -227,53 +165,180 @@ document.getElementById('check-prediction-btn').addEventListener('click', functi
                     document.getElementById('result').textContent = 'Stable Diffusion 测试错误:\n' + error.message;
                 });
         });
-// 测试替代模型
-document.getElementById('test-alt-model-btn').addEventListener('click', function() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetch('/api/stable-diffusion-alt')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '替代模型测试结果:\n' + JSON.stringify(data, null, 2);
+        
+        // 测试公共模型
+        document.getElementById('test-public-model-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
             
-            if (data.outputVideo) {
-                // 创建视频元素
-                const video = document.createElement('video');
-                video.src = data.outputVideo;
-                video.controls = true;
-                video.autoplay = true;
-                video.style.maxWidth = '100%';
-                video.style.maxHeight = '300px';
-                
-                // 替换结果预览
-                const resultPreview = document.getElementById('result-preview');
-                resultPreview.parentNode.replaceChild(video, resultPreview);
-            }
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '替代模型测试错误:\n' + error.message;
+            fetchWithErrorHandling('/api/public-model')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '公共模型测试结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '公共模型测试错误:\n' + error.message;
+                });
         });
-});
 
-// 测试文本生成
-document.getElementById('test-text-btn').addEventListener('click', function() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').textContent = '处理中...';
-    
-    fetch('/api/text-generation')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '文本生成测试结果:\n' + JSON.stringify(data, null, 2);
-        })
-        .catch(error => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').textContent = '文本生成测试错误:\n' + error.message;
+        // 检查 API 密钥
+        document.getElementById('check-token-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/check-token')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'API 密钥检查结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'API 密钥检查错误:\n' + error.message;
+                });
         });
-});
+
+        // 搜索 Ghibli 模型
+        document.getElementById('search-ghibli-models-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/search-models?q=ghibli')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'Ghibli 模型搜索结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'Ghibli 模型搜索错误:\n' + error.message;
+                });
+        });
+        
+        // 测试替代模型
+        document.getElementById('test-alt-model-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/stable-diffusion-alt')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '替代模型测试结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '替代模型测试错误:\n' + error.message;
+                });
+        });
+        
+        // 测试文本生成
+        document.getElementById('test-text-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/text-generation')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '文本生成测试结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '文本生成测试错误:\n' + error.message;
+                });
+        });
+        
+        // 查询模型信息
+        document.getElementById('query-model-btn').addEventListener('click', function() {
+            const owner = document.getElementById('model-owner').value;
+            const name = document.getElementById('model-name').value;
+            
+            if (!owner || !name) {
+                alert('请输入模型所有者和名称');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling(`/api/model-info?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}`)
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '模型信息:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '查询模型信息错误:\n' + error.message;
+                });
+        });
+        
+        // 调试 API 调用
+        document.getElementById('debug-call-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/debug-call')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'API 调试结果:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'API 调试错误:\n' + error.message;
+                });
+        });
+
+        // 测试本地模型
+        document.getElementById('local-model-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling('/api/local-model')
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '本地模型测试结果:\n' + JSON.stringify(data, null, 2);
+                    
+                    // 如果有预测 ID，自动填充到输入框
+                    if (data.predictionId) {
+                        document.getElementById('prediction-id').value = data.predictionId;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '本地模型测试错误:\n' + error.message;
+                });
+        });
+
+        // 检查预测结果
+        document.getElementById('check-prediction-btn').addEventListener('click', function() {
+            const predictionId = document.getElementById('prediction-id').value;
+            
+            if (!predictionId) {
+                alert('请输入预测 ID');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetchWithErrorHandling(`/api/check-prediction?id=${encodeURIComponent(predictionId)}`)
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '预测结果:\n' + JSON.stringify(data, null, 2);
+                    
+                    // 如果预测成功并有输出，显示图像
+                    if (data.prediction && data.prediction.status === 'succeeded' && data.prediction.output) {
+                        let output = data.prediction.output;
+                        if (Array.isArray(output)) {
+                            output = output[0];
+                        }
+                        
+                        document.getElementById('result-preview').src = output;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = '检查预测错误:\n' + error.message;
+                });
+        });
         
         // 通用图像上传测试函数
         function testImageUpload(endpoint) {
@@ -351,7 +416,19 @@ document.getElementById('test-text-btn').addEventListener('click', function() {
                             image: base64Image
                         })
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                try {
+                                    const errorData = JSON.parse(text);
+                                    throw new Error(errorData.error || `网络响应异常，状态码: ${response.status}`);
+                                } catch (e) {
+                                    throw new Error(`网络响应异常，状态码: ${response.status}, 响应: ${text.substring(0, 100)}...`);
+                                }
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         loading.style.display = 'none';
                         resultDiv.textContent = '测试结果:\n' + JSON.stringify(data, null, 2);
