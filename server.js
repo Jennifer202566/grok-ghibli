@@ -36,14 +36,19 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB限制
 });
 
-// 确保上传和结果目录存在
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-  console.log('创建了uploads目录');
-}
-if (!fs.existsSync('results')) {
-  fs.mkdirSync('results');
-  console.log('创建了results目录');
+// 在 server.js 中
+// 检查是否在 Vercel 环境中
+const isVercel = process.env.VERCEL === '1';
+
+// 只在非 Vercel 环境中创建目录
+if (!isVercel) {
+  // 确保必要的文件夹存在
+  if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads', { recursive: true });
+  }
+  if (!fs.existsSync('results')) {
+    fs.mkdirSync('results', { recursive: true });
+  }
 }
 
 // 处理图片上传和转换
