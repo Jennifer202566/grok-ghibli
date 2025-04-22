@@ -66,6 +66,45 @@
                     document.getElementById('result').textContent = 'URL 测试错误:\n' + error.message;
                 });
         });
+    <button id="test-models-btn">获取模型列表</button>
+<button id="test-stable-diffusion-btn">测试 Stable Diffusion</button>
+// 获取模型列表
+document.getElementById('test-models-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetch('/api/models')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '模型列表:\n' + JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '获取模型列表错误:\n' + error.message;
+        });
+});
+
+// 测试 Stable Diffusion
+document.getElementById('test-stable-diffusion-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetch('/api/stable-diffusion')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = 'Stable Diffusion 测试结果:\n' + JSON.stringify(data, null, 2);
+            
+            if (data.outputImage) {
+                document.getElementById('result-preview').src = data.outputImage;
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = 'Stable Diffusion 测试错误:\n' + error.message;
+        });
+});
         
         // 测试图像转换
         document.getElementById('test-convert-btn').addEventListener('click', function() {
