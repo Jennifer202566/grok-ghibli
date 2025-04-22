@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API 测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { margin-bottom: 20px; }
+        button { padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; }
+        #loading { display: none; margin-top: 20px; }
+        .preview { max-width: 100%; max-height: 300px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>API 测试页面</h1>
+    
+    <div class="container">
+        <h2>测试图像上传</h2>
+        <input type="file" id="file-input" accept="image/jpeg, image/png">
+        <button id="test-btn">测试图像上传</button>
+        <button id="test-url-btn">测试 URL API</button>
+        <button id="test-convert-btn">测试图像转换</button>
+    </div>
+    
+    <div id="loading">处理中，请稍候...</div>
+    
+    <div>
+        <h3>原始图像</h3>
+        <img id="original-preview" class="preview">
+    </div>
+    
+    <div>
+        <h3>处理结果</h3>
+        <img id="result-preview" class="preview">
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        // 测试图像上传
+        document.getElementById('test-btn').addEventListener('click', function() {
+            testImageUpload('/api/test-image');
+        });
+        
+        // 测试 URL API
+        document.getElementById('test-url-btn').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').textContent = '处理中...';
+            
+            fetch('/api/url-test')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'URL 测试结果:\n' + JSON.stringify(data, null, 2);
+                    
+                    if (data.originalImage) {
+                        document.getElementById('original-preview').src = data.originalImage;
+                    }
+                    
+                    if (data.outputImage) {
+                        document.getElementById('result-preview').src = data.outputImage;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').textContent = 'URL 测试错误:\n' + error.message;
+                });
+        });
+        
+        // 测试图像转换
+        document.getElementById('test-convert-btn').addEventListener('click', function() {
+            testImageUpload('/api/convert');
+        });
+        
+        // 通用图像上传测试函数
+        function testImageUpload(endpoint) {
+            const fileInput = document.getElementById('file-input');
+            const resultDiv = document.getElementById('result');
+            const loading = document.getElementById('loading');
+            
+            if (!fileInput.files.length) {
+                resultDiv.textContent = '请先选择一张图片';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // 检查文件类型
+            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                resultDiv.textContent = '请上传 JPG 或 PNG 格式的图片';
+                return;
+            }
+            
+            // 检查文件大小
+            if (file.size > 1 * 1024 * 1024) {
+                resultDiv.textContent = '图片大小不能超过 1MB';
+                return;
+            }
+            
+            resultDiv.textContent = '处理中...';
+            loading.style.display = 'block';
+            
+            // 读取文件
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // 显示原始图像
+                document.getElementById('original-preview').src = e.target.result;
+                
+                // 创建图像对象以获取尺寸
+                const img = new Image();
+                img.onload = function() {
+                    // 调整图像尺寸
+                    const maxDimension = 512;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // 计算新尺寸，保持宽高比
+                    if (width > height) {
+                        height = Math.round(height * (maxDimension / width));
+                        width = maxDimension;
+                    } else {
+                        width = Math.round(width * (maxDimension / height));
+                        height = maxDimension;
+                    }
+                    
+                    // 创建画布并调整图像大小
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 获取调整大小后的图像数据
+                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // 提取 base64 数据
+                    const base64Image = imageData.split(',')[1];
+                    
+                    // 调用测试 API
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image: base64Image
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        loading.style.display = 'none';
+                        resultDiv.textContent = '测试结果:\n' + JSON.stringify(data, null, 2);
+                        
+                        // 如果有输出图像，显示它
+                        if (data.outputImage) {
+                            document.getElementById('result-preview').src = data.outputImage;
+                        }
+                    })
+                    .catch(error => {
+                        loading.style.display = 'none';
+                        resultDiv.textContent = '测试错误:\n' + error.message;
+                    });
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
