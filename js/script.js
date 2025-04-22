@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-  // 在 handleFileUpload 函数中添加图像大小处理
+// 在 handleFileUpload 函数中添加更严格的图像预处理
 function handleFileUpload(file) {
     // 检查文件类型
     if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
@@ -67,9 +67,9 @@ function handleFileUpload(file) {
         return;
     }
     
-    // 检查文件大小（最大 2MB）
-    if (file.size > 2 * 1024 * 1024) {
-        alert('图片大小不能超过 2MB');
+    // 检查文件大小（最大 1MB，更小）
+    if (file.size > 1 * 1024 * 1024) {
+        alert('图片大小不能超过 1MB');
         return;
     }
     
@@ -79,36 +79,31 @@ function handleFileUpload(file) {
         // 创建图像对象以获取尺寸
         const img = new Image();
         img.onload = function() {
-            // 检查图像尺寸
-            const maxDimension = 1024; // 最大尺寸
+            // 强制调整图像尺寸，无论原始尺寸如何
+            const maxDimension = 512; // 更小的最大尺寸
             let width = img.width;
             let height = img.height;
-            let needResize = false;
             
-            if (width > maxDimension || height > maxDimension) {
-                needResize = true;
-                if (width > height) {
-                    height = Math.round(height * (maxDimension / width));
-                    width = maxDimension;
-                } else {
-                    width = Math.round(width * (maxDimension / height));
-                    height = maxDimension;
-                }
+            // 计算新尺寸，保持宽高比
+            if (width > height) {
+                height = Math.round(height * (maxDimension / width));
+                width = maxDimension;
+            } else {
+                width = Math.round(width * (maxDimension / height));
+                height = maxDimension;
             }
             
-            let imageData = e.target.result;
+            // 创建画布并调整图像大小
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF'; // 白色背景
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
             
-            // 如果需要调整大小
-            if (needResize) {
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // 获取调整大小后的图像数据
-                imageData = canvas.toDataURL('image/jpeg', 0.9);
-            }
+            // 获取调整大小后的图像数据，使用较低的质量
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
             
             // 显示图像预览
             originalPreview.src = imageData;
@@ -154,6 +149,7 @@ function handleFileUpload(file) {
     
     reader.readAsDataURL(file);
 }
+
     
     // 下载图片函数
     function downloadImage(url) {
