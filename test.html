@@ -25,6 +25,8 @@
         <div>
             <button id="test-models-btn">获取模型列表</button>
             <button id="test-stable-diffusion-btn">测试 Stable Diffusion</button>
+<button id="test-alt-model-btn">测试替代模型</button>
+<button id="test-text-btn">测试文本生成</button>
         </div>
     </div>
     
@@ -115,6 +117,53 @@
                     document.getElementById('result').textContent = 'Stable Diffusion 测试错误:\n' + error.message;
                 });
         });
+// 测试替代模型
+document.getElementById('test-alt-model-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetch('/api/stable-diffusion-alt')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '替代模型测试结果:\n' + JSON.stringify(data, null, 2);
+            
+            if (data.outputVideo) {
+                // 创建视频元素
+                const video = document.createElement('video');
+                video.src = data.outputVideo;
+                video.controls = true;
+                video.autoplay = true;
+                video.style.maxWidth = '100%';
+                video.style.maxHeight = '300px';
+                
+                // 替换结果预览
+                const resultPreview = document.getElementById('result-preview');
+                resultPreview.parentNode.replaceChild(video, resultPreview);
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '替代模型测试错误:\n' + error.message;
+        });
+});
+
+// 测试文本生成
+document.getElementById('test-text-btn').addEventListener('click', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetch('/api/text-generation')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '文本生成测试结果:\n' + JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '文本生成测试错误:\n' + error.message;
+        });
+});
         
         // 通用图像上传测试函数
         function testImageUpload(endpoint) {
