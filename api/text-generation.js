@@ -4,7 +4,7 @@ const axios = require('axios');
 module.exports = async (req, res) => {
   try {
     // 使用一个简单的文本生成模型
-    const modelId = "meta/llama-2-7b-chat:13c3cdee13ee059ab779f0291d29054dab00a47dad8261375654de5540165fb0";
+    const modelId = "replicate/llama-2-70b-chat:2c1608e18606fad2812020dc541930f2d0495ce32eee50074220b87300bc16e1";
     
     const response = await axios.post(
       'https://api.replicate.com/v1/predictions',
