@@ -18,9 +18,31 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // 手动解析请求体
+    let body;
+    try {
+      // 检查请求体是否已经被解析
+      if (req.body && typeof req.body === 'object') {
+        body = req.body;
+      } else if (typeof req.body === 'string') {
+        body = JSON.parse(req.body);
+      } else {
+        // 如果请求体尚未解析，手动解析
+        const buffers = [];
+        for await (const chunk of req) {
+          buffers.push(chunk);
+        }
+        const data = Buffer.concat(buffers).toString();
+        body = data ? JSON.parse(data) : {};
+      }
+    } catch (e) {
+      console.error('解析请求体失败:', e);
+      return res.status(400).json({ error: '无法解析请求体', details: e.message });
+    }
+
     console.log('收到图像转换请求');
     
-    const { image } = req.body;
+    const { image } = body;
     
     if (!image) {
       console.log('请求中缺少图像数据');
@@ -30,7 +52,6 @@ module.exports = async (req, res) => {
     console.log('准备调用 Replicate API');
     
     // 使用一个非常简单的模型 - 图像超分辨率模型
-    // 这是一个已知工作的模型 ID
     const modelId = "tencentarc/gfpgan:9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3";
     
     // 简化请求格式 - 只发送最基本的参数
