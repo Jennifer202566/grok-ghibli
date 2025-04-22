@@ -30,8 +30,8 @@ module.exports = async (req, res) => {
       {
         version: latestVersion,
         input: {
-          // 使用一个公共图像 URL
-          gif: "https://media.giphy.com/media/3o7TKsQ8UwUSQMd8Io/giphy.gif"
+          // 使用正确的参数名称 input_gif 而不是 gif
+          input_gif: "https://media.giphy.com/media/3o7TKsQ8UwUSQMd8Io/giphy.gif"
         }
       },
       {
