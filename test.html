@@ -13,6 +13,15 @@
 </head>
 <body>
     <h1>API 测试页面</h1>
+
+<div class="container">
+  <h2>查询模型信息</h2>
+  <div>
+    <input type="text" id="model-owner" placeholder="模型所有者" value="ghostface-ai">
+    <input type="text" id="model-name" placeholder="模型名称" value="gif-upscaler">
+    <button id="query-model-btn">查询模型信息</button>
+  </div>
+</div>
     
     <div class="container">
         <h2>测试图像上传</h2>
@@ -74,6 +83,30 @@
                     document.getElementById('result').textContent = 'URL 测试错误:\n' + error.message;
                 });
         });
+// 查询模型信息
+document.getElementById('query-model-btn').addEventListener('click', function() {
+    const owner = document.getElementById('model-owner').value;
+    const name = document.getElementById('model-name').value;
+    
+    if (!owner || !name) {
+        alert('请输入模型所有者和名称');
+        return;
+    }
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').textContent = '处理中...';
+    
+    fetch(`/api/model-info?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '模型信息:\n' + JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').textContent = '查询模型信息错误:\n' + error.message;
+        });
+});
         
         // 测试图像转换
         document.getElementById('test-convert-btn').addEventListener('click', function() {
